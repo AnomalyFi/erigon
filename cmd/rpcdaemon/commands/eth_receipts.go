@@ -511,6 +511,35 @@ func (api *APIImpl) GetTransactionReceipt(ctx context.Context, txnHash common.Ha
 	return marshalReceipt(receipts[txnIndex], block.Transactions()[txnIndex], cc, block, txnHash, true), nil
 }
 
+// Gets logs for a range of blocks, implements eth_blockReceiptRange
+func (api *APIImpl) BlockReceiptRange(ctx context.Context, startBlock rpc.BlockNumber, endBlock rpc.BlockNumber) ([]map[string]interface{}, error) {
+	if startBlock > endBlock {
+		return nil, fmt.Errorf("Invalid block range")
+	}
+	var rangeLogs []map[string]interface{}
+	for i := startBlock; i <= endBlock; i++ {
+		blockLogs, err := api.GetBlockReceipts(ctx, i)
+		if err != nil {
+			return nil, err
+		}
+		rangeLogs = append(rangeLogs, blockLogs...)
+	}
+	return rangeLogs, nil
+}
+
+// Gets logs for a specific list of blocks, implements eth_specificBlocksReceipt
+func (api *APIImpl) SpecificBlocks(ctx context.Context, blocks []rpc.BlockNumber) ([]map[string]interface{}, error) {
+	var specificLogs []map[string]interface{}
+	for _, block := range blocks {
+		blockLogs, err := api.GetBlockReceipts(ctx, block)
+		if err != nil {
+			return nil, err
+		}
+		specificLogs = append(specificLogs, blockLogs...)
+	}
+	return specificLogs, nil
+}
+
 // GetBlockReceipts - receipts for individual block
 // func (api *APIImpl) GetBlockReceipts(ctx context.Context, number rpc.BlockNumber) ([]map[string]interface{}, error) {
 func (api *APIImpl) GetBlockReceipts(ctx context.Context, number rpc.BlockNumber) ([]map[string]interface{}, error) {
